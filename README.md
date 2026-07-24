@@ -236,17 +236,3 @@ Then update `VITE_API_URL` in the client's Vercel environment to point to your s
 - 🔌 **Plugin Marketplace** — Third-party panel extensions via a plugin API
 
 ---
-
-## 📸 Screenshots
-
-> *(Screenshots section — add your own after running the app)*
-
-| Landing Page | Editor | Dashboard |
-|---|---|---|
-| *(screenshot)* | *(screenshot)* | *(screenshot)* |
-
----
-
-## 📄 License
-
-MIT — built for hackathon purposes.
