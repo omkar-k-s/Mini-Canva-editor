@@ -1,0 +1,53 @@
+{
+  "name": "mini-canva-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^8.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "axios": "^1.7.9",
+    "clsx": "^2.1.1",
+    "fabric": "^5.3.0",
+    "framer-motion": "^11.15.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "react": "^19.0.0",
+    "react-color": "^2.19.3",
+    "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.4.1",
+    "react-icons": "^5.4.0",
+    "react-router-dom": "^7.1.1",
+    "react-window": "^1.8.10",
+    "uuid": "^11.1.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/fabric": "^5.3.7",
+    "@types/node": "^22.10.6",
+    "@types/react": "^19.0.2",
+    "@types/react-color": "^3.0.12",
+    "@types/react-dom": "^19.0.2",
+    "@types/react-window": "^1.8.8",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5"
+  }
+}
