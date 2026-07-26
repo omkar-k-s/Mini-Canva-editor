@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import crypto from 'crypto'
 import { User } from '../models/User.model'
 import { jwtUtils } from '../utils/jwt.utils'
 import { sendSuccess, sendError } from '../utils/response.utils'
@@ -65,4 +66,53 @@ export const logout = asyncHandler(async (_req: Request, res: Response) => {
   // JWT is stateless — logout is handled client-side by removing the token.
   // This endpoint exists for logging/analytics purposes.
   sendSuccess(res, null, 200, 'Logged out successfully')
+})
+
+/**
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body
+  const user = await User.findOne({ email })
+  if (!user) {
+    // Return success even if user not found to prevent email enumeration
+    return sendSuccess(res, null, 200, 'If an account with that email exists, a reset link has been sent.')
+  }
+
+  // Generate token
+  const resetToken = crypto.randomBytes(32).toString('hex')
+  user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+  user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+  await user.save()
+
+  // For development, log the reset URL to console
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`
+  console.log(`\n\n[DEV] Password Reset Link: ${resetUrl}\n\n`)
+
+  sendSuccess(res, null, 200, 'If an account with that email exists, a reset link has been sent.')
+})
+
+/**
+ * POST /api/auth/reset-password/:token
+ */
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.params
+  const { password } = req.body
+
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: new Date() },
+  })
+
+  if (!user) {
+    return sendError(res, 'Token is invalid or has expired', 400)
+  }
+
+  user.password = password
+  user.resetPasswordToken = undefined
+  user.resetPasswordExpires = undefined
+  await user.save()
+
+  sendSuccess(res, null, 200, 'Password has been reset successfully')
 })

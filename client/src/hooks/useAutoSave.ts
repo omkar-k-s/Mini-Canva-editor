@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useCanvasStore } from '@/store/canvasStore'
+import { safeLoadFromJSON } from '@/utils/fabricHelpers'
 
 const AUTOSAVE_KEY = 'mini-canva-autosave'
 const AUTOSAVE_INTERVAL = 3000 // 3 seconds
@@ -41,7 +42,7 @@ export function useAutoSave(projectId?: string) {
     if (!saved) return false
 
     try {
-      canvas.loadFromJSON(JSON.parse(saved), () => {
+      safeLoadFromJSON(canvas, saved, () => {
         canvas.requestRenderAll()
       })
       return true

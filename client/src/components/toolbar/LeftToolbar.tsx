@@ -97,7 +97,7 @@ const LeftToolbar = memo(() => {
           canvas.add(img)
           canvas.setActiveObject(img)
           canvas.requestRenderAll()
-        })
+        }, { crossOrigin: 'anonymous' })
 
         toast.success('Image added!', { id: toastId })
       } catch {

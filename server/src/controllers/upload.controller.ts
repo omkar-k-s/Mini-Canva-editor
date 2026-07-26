@@ -10,7 +10,7 @@ import { config } from '../config/env'
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB
+    fileSize: 50 * 1024 * 1024, // 50 MB to allow high-res photos
   },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {

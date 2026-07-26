@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react'
 import { fabric } from 'fabric'
 import { useCanvasStore } from '@/store/canvasStore'
 import { useUiStore } from '@/store/uiStore'
+import toast from 'react-hot-toast'
 
 /**
  * useKeyboard — binds global keyboard shortcuts to canvas actions.
@@ -50,17 +51,18 @@ export function useKeyboard() {
 
       // ── Copy ──────────────────────────────────────────────────────────────
       if (ctrl && e.key.toLowerCase() === 'c') {
-        e.preventDefault()
         const active = canvas.getActiveObject()
         if (active) {
-          active.clone((cloned: fabric.Object) => setClipboard(cloned))
+          active.clone((cloned: fabric.Object) => {
+            setClipboard(cloned)
+            toast.success('Copied', { id: 'copy', duration: 1500, position: 'bottom-center' })
+          })
         }
         return
       }
 
       // ── Paste ─────────────────────────────────────────────────────────────
       if (ctrl && e.key.toLowerCase() === 'v') {
-        e.preventDefault()
         if (clipboard) {
           clipboard.clone((cloned: any) => {
             canvas.discardActiveObject()
@@ -84,6 +86,7 @@ export function useKeyboard() {
 
             canvas.setActiveObject(cloned)
             canvas.requestRenderAll()
+            toast.success('Pasted', { id: 'paste', duration: 1500, position: 'bottom-center' })
           })
         }
         return
@@ -120,6 +123,7 @@ export function useKeyboard() {
       if (ctrl && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault()
         undo()
+        toast.success('Undo', { id: 'undo', duration: 1000, position: 'bottom-center' })
         return
       }
 
@@ -127,6 +131,7 @@ export function useKeyboard() {
       if (ctrl && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
         e.preventDefault()
         redo()
+        toast.success('Redo', { id: 'redo', duration: 1000, position: 'bottom-center' })
         return
       }
 

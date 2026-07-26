@@ -6,7 +6,7 @@ import { useUiStore } from '@/store/uiStore'
 import { useCanvasStore } from '@/store/canvasStore'
 import { useProjectStore } from '@/store/projectStore'
 import { projectService } from '@/services/projectService'
-import { generateThumbnail } from '@/utils/fabricHelpers'
+import { generateThumbnail, prepareCanvasForSave } from '@/utils/fabricHelpers'
 import { CANVAS_SIZES } from '@/constants/canvasSizes'
 import toast from 'react-hot-toast'
 import type { CanvasSize } from '@/types/canvas.types'
@@ -29,17 +29,30 @@ const SaveProjectDialog = memo(() => {
     setSaving(true)
 
     try {
-      // Discard active object to prevent serialization errors (e.g. while editing text)
-      canvas.discardActiveObject()
-      canvas.requestRenderAll()
+      prepareCanvasForSave(canvas)
 
-      const canvasData = JSON.stringify(canvas.toJSON(['id', 'name', 'selectable']))
-      const thumbnail  = generateThumbnail(canvas)
+      // Wait a tick for fabric to fully exit text editing mode
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      let canvasData = ''
+      try {
+        canvasData = JSON.stringify(canvas.toJSON(['id', 'name', 'selectable']))
+      } catch (e: any) {
+        throw new Error('Canvas toJSON failed: ' + e.message)
+      }
+
+      let thumbnail = ''
+      try {
+        thumbnail = generateThumbnail(canvas)
+      } catch (e: any) {
+        console.error('Thumbnail generation failed', e)
+      }
 
       const project = await projectService.create({
         title: title.trim(),
         description: description.trim(),
         canvasData,
+        thumbnail,
         canvasWidth:  canvasSize.width,
         canvasHeight: canvasSize.height,
         backgroundColor,
@@ -60,7 +73,8 @@ const SaveProjectDialog = memo(() => {
       closeDialog('saveProjectDialog')
     } catch (err: any) {
       console.error('[SaveProjectDialog Error]', err, err.response?.data)
-      toast.error('Failed to save project: ' + (err.response?.data?.message || err.message))
+      const debugInfo = err.stack ? err.stack.split('\\n').slice(0, 2).join(' ') : err.message
+      toast.error('Failed to save: ' + (err.response?.data?.message || debugInfo))
     } finally {
       setIsSaving(false)
       setSaving(false)

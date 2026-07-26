@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { body } from 'express-validator'
-import { register, login, getProfile, logout } from '../controllers/auth.controller'
+import { register, login, getProfile, logout, forgotPassword, resetPassword } from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
 import { validate } from '../middleware/validate.middleware'
 
@@ -25,6 +25,20 @@ router.post(
   ],
   validate,
   login
+)
+
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().withMessage('Valid email required').normalizeEmail()],
+  validate,
+  forgotPassword
+)
+
+router.post(
+  '/reset-password/:token',
+  [body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')],
+  validate,
+  resetPassword
 )
 
 router.get('/profile', authenticate, getProfile)

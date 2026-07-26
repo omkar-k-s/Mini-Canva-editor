@@ -18,6 +18,7 @@ export interface Project {
 export interface ProjectCreatePayload {
   title: string
   description?: string
+  thumbnail?: string
   canvasData: string
   canvasWidth: number
   canvasHeight: number

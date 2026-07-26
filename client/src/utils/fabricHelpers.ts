@@ -1,5 +1,31 @@
 import { fabric } from 'fabric'
 import { v4 as uuidv4 } from 'uuid'
+import type { ElementState } from '@/types/canvas.types'
+
+// Prevent canvas tainting from external images on loadFromJSON
+fabric.Image.prototype.crossOrigin = 'anonymous'
+
+/**
+ * Parses JSON and injects crossOrigin into image objects before loading.
+ * This guarantees that external images (like from Cloudinary) don't taint the canvas.
+ */
+export function safeLoadFromJSON(canvas: fabric.Canvas, jsonString: string, callback?: () => void) {
+  try {
+    const parsed = JSON.parse(jsonString)
+    if (parsed.objects && Array.isArray(parsed.objects)) {
+      parsed.objects.forEach((obj: any) => {
+        if (obj.type === 'image') {
+          obj.crossOrigin = 'anonymous'
+        }
+      })
+    }
+    canvas.loadFromJSON(parsed, () => {
+      if (callback) callback()
+    })
+  } catch (e) {
+    console.error('Failed to parse or load canvas JSON', e)
+  }
+}
 
 // ─── Default style tokens ─────────────────────────────────────────────────────
 
@@ -259,9 +285,48 @@ export function getObjectById(
  * Scales down to 400px wide for performance.
  */
 export function generateThumbnail(canvas: fabric.Canvas): string {
-  return canvas.toDataURL({
-    format: 'jpeg',
-    quality: 0.6,
-    multiplier: 400 / canvas.getWidth(),
+  try {
+    return canvas.toDataURL({
+      format: 'jpeg',
+      quality: 0.2, // Lower quality to keep base64 string small
+      multiplier: 1, // Avoid floating point crashes in some browsers
+    })
+  } catch (err) {
+    console.error('Thumbnail generation error', err)
+    return ''
+  }
+}
+
+/**
+ * Prepares the canvas for serialization by fixing known Fabric.js 5.3.0 bugs.
+ * Resolves "Cannot read properties of undefined (reading '0')" during toJSON().
+ */
+export function prepareCanvasForSave(canvas: fabric.Canvas): void {
+  canvas.discardActiveObject()
+  
+  canvas.getObjects().forEach((obj) => {
+    // 1. Fix text objects (empty text causes toJSON to crash when styles exist)
+    if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+      const t = obj as fabric.Textbox
+      if (!t.text || t.text.trim() === '') {
+        canvas.remove(t)
+      } else {
+        // Force text lines recalculation
+        if (typeof t.initDimensions === 'function') {
+          t.initDimensions()
+        }
+      }
+    }
+    
+    // 2. Fix image filters (undefined filters in array cause toJSON to crash)
+    if (obj.type === 'image') {
+      const img = obj as fabric.Image
+      if (Array.isArray(img.filters)) {
+        // Remove null/undefined filters
+        img.filters = img.filters.filter(f => f != null)
+      }
+    }
   })
+  
+  canvas.requestRenderAll()
 }

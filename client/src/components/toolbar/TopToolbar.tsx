@@ -11,7 +11,7 @@ import { useUiStore } from '@/store/uiStore'
 import { useProjectStore, selectIsSaving } from '@/store/projectStore'
 import { useAuthStore, selectIsAuthenticated } from '@/store/authStore'
 import { projectService } from '@/services/projectService'
-import { generateThumbnail } from '@/utils/fabricHelpers'
+import { generateThumbnail, prepareCanvasForSave } from '@/utils/fabricHelpers'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import toast from 'react-hot-toast'
@@ -43,12 +43,25 @@ const TopToolbar = memo(() => {
 
     setSaving(true)
     try {
-      // Discard active object to prevent serialization errors (e.g. while editing text)
-      canvas.discardActiveObject()
-      canvas.requestRenderAll()
+      prepareCanvasForSave(canvas)
 
-      const canvasData = JSON.stringify(canvas.toJSON(['id', 'name', 'selectable']))
-      const thumbnail  = generateThumbnail(canvas)
+      // Wait a tick for fabric to fully exit text editing mode
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      let canvasData = ''
+      try {
+        canvasData = JSON.stringify(canvas.toJSON(['id', 'name', 'selectable']))
+      } catch (e: any) {
+        throw new Error('Canvas toJSON failed: ' + e.message)
+      }
+
+      let thumbnail = ''
+      try {
+        thumbnail = generateThumbnail(canvas)
+      } catch (e: any) {
+        // Fallback to empty thumbnail if it fails, don't block saving
+        console.error('Thumbnail generation failed', e)
+      }
 
       if (currentProject && currentProject._id) {
         await projectService.update(currentProject._id, {
@@ -65,7 +78,9 @@ const TopToolbar = memo(() => {
       }
     } catch (err: any) {
       console.error('[Save Error]', err, err.response?.data)
-      toast.error('Failed to save project: ' + (err.response?.data?.message || err.message))
+      // Print the stack trace's first important line if available to help debugging
+      const debugInfo = err.stack ? err.stack.split('\\n').slice(0, 2).join(' ') : err.message
+      toast.error('Failed to save: ' + (err.response?.data?.message || debugInfo))
     } finally {
       setSaving(false)
     }

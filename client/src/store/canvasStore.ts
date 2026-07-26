@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import type { fabric } from 'fabric'
+import { DEFAULT_WIDTH, DEFAULT_HEIGHT } from '@/constants/canvasSizes'
+import { safeLoadFromJSON } from '@/utils/fabricHelpers'
 import type {
   CanvasStoreState,
   CanvasLayer,
@@ -92,8 +94,11 @@ export const useCanvasStore = create<CanvasStoreState>()(
       if (!canvas || historyIndex <= 0) return
       const prevIndex = historyIndex - 1
       const entry = history[prevIndex]
-      canvas.loadFromJSON(JSON.parse(entry.snapshot), () => {
-        canvas.renderAll()
+      if (!canvas || !entry) return
+
+      safeLoadFromJSON(canvas, entry.snapshot, () => {
+        canvas.requestRenderAll()
+        get().syncLayers()
       })
       set({ historyIndex: prevIndex })
     },
@@ -103,8 +108,9 @@ export const useCanvasStore = create<CanvasStoreState>()(
       if (!canvas || historyIndex >= history.length - 1) return
       const nextIndex = historyIndex + 1
       const entry = history[nextIndex]
-      canvas.loadFromJSON(JSON.parse(entry.snapshot), () => {
-        canvas.renderAll()
+      safeLoadFromJSON(canvas, entry.snapshot, () => {
+        canvas.requestRenderAll()
+        get().syncLayers()
       })
       set({ historyIndex: nextIndex })
     },

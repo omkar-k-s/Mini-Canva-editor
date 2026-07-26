@@ -4,6 +4,7 @@ import { useProjectStore } from '@/store/projectStore'
 import { useAutoSave } from '@/hooks/useAutoSave'
 import EditorLayout from '@/components/layout/EditorLayout'
 import { fabric } from 'fabric'
+import { safeLoadFromJSON } from '@/utils/fabricHelpers'
 
 /**
  * EditorPage — sets up canvas state then renders EditorLayout.
@@ -21,8 +22,7 @@ const EditorPage = memo(() => {
     if (currentProject) {
       // Load project from cloud
       try {
-        const parsed = JSON.parse(currentProject.canvasData)
-        canvas.loadFromJSON(parsed, () => {
+        safeLoadFromJSON(canvas, currentProject.canvasData, () => {
           canvas.requestRenderAll()
         })
         setCanvasSize({

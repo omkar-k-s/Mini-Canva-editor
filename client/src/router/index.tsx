@@ -7,6 +7,7 @@ const LandingPage   = lazy(() => import('@/pages/LandingPage'))
 const AuthPage      = lazy(() => import('@/pages/AuthPage'))
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const EditorPage    = lazy(() => import('@/pages/EditorPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 const NotFoundPage  = lazy(() => import('@/pages/NotFoundPage'))
 
 // ── Loading fallback ──────────────────────────────────────────────────────────
@@ -31,6 +32,14 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<PageLoader />}>
         <AuthPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/reset-password/:token',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <ResetPasswordPage />
       </Suspense>
     ),
   },

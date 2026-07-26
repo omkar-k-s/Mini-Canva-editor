@@ -40,8 +40,8 @@ const limiter = rateLimit({
 app.use('/api', limiter)
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
-app.use(express.json({ limit: '20mb' })) // Large limit for canvas JSON data
-app.use(express.urlencoded({ extended: true, limit: '20mb' }))
+app.use(express.json({ limit: '50mb' })) // Increased limit for high-res images in canvas JSON
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 if (!config.isProd) {

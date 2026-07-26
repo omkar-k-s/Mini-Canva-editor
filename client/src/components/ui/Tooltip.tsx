@@ -45,7 +45,7 @@ export const Tooltip = memo(({ content, children, side = 'top', delay = 400 }: T
             transition={{ duration: 0.1 }}
             className={[
               'absolute z-[200] pointer-events-none whitespace-nowrap',
-              'bg-slate-800 text-slate-900 text-xs font-medium px-2 py-1 rounded-lg',
+              'bg-slate-800 text-slate-100 text-xs font-medium px-2 py-1 rounded-lg',
               'border border-white/10 shadow-lg',
               positionClasses[side],
             ].join(' ')}

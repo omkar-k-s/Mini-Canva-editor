@@ -8,12 +8,13 @@ import type { AuthRequest } from '../middleware/auth.middleware'
  * POST /api/projects
  */
 export const createProject = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { title, description, canvasData, canvasWidth, canvasHeight, backgroundColor } = req.body
+  const { title, description, canvasData, thumbnail, canvasWidth, canvasHeight, backgroundColor } = req.body
 
   const project = await Project.create({
     title,
     description,
     canvasData,
+    thumbnail,
     canvasWidth:     canvasWidth  || 1080,
     canvasHeight:    canvasHeight || 1080,
     backgroundColor: backgroundColor || '#ffffff',

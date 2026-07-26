@@ -8,7 +8,7 @@ import { authService } from '@/services/authService'
 import { MdEmail, MdLock, MdPerson, MdArrowForward } from 'react-icons/md'
 import toast from 'react-hot-toast'
 
-type Mode = 'login' | 'register'
+type Mode = 'login' | 'register' | 'forgot-password'
 
 const AuthPage = memo(() => {
   const navigate = useNavigate()
@@ -26,7 +26,7 @@ const AuthPage = memo(() => {
     if (mode === 'register' && !name.trim()) e.name = 'Name is required'
     if (!email.trim())   e.email    = 'Email is required'
     if (!email.includes('@')) e.email = 'Invalid email'
-    if (password.length < 6) e.password = 'Password must be at least 6 characters'
+    if (mode !== 'forgot-password' && password.length < 6) e.password = 'Password must be at least 6 characters'
     setErrors(e)
     return Object.keys(e).length === 0
   }, [mode, name, email, password])
@@ -37,18 +37,24 @@ const AuthPage = memo(() => {
 
     setLoading(true)
     try {
-      let result
-      if (mode === 'login') {
-        result = await authService.login({ email, password })
+      if (mode === 'forgot-password') {
+        const result = await authService.forgotPassword(email)
+        toast.success(result.message)
+        setMode('login')
       } else {
-        result = await authService.register({ name, email, password })
+        let result
+        if (mode === 'login') {
+          result = await authService.login({ email, password })
+        } else {
+          result = await authService.register({ name, email, password })
+        }
+        setUser(result.user)
+        setToken(result.token)
+        toast.success(mode === 'login' ? 'Welcome back!' : 'Account created!')
+        navigate('/dashboard')
       }
-      setUser(result.user)
-      setToken(result.token)
-      toast.success(mode === 'login' ? 'Welcome back!' : 'Account created!')
-      navigate('/dashboard')
-    } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Authentication failed'
+    } catch (err: any) {
+      const message = err.response?.data?.message || (err.message === 'Network Error' ? 'Cannot connect to server (Server might be down)' : 'Authentication failed')
       toast.error(message)
     } finally {
       setLoading(false)
@@ -75,30 +81,32 @@ const AuthPage = memo(() => {
             Mini Canva
           </Link>
           <p className="text-slate-500 mt-2 text-sm">
-            {mode === 'login' ? 'Sign in to your account' : 'Create your free account'}
+            {mode === 'login' ? 'Sign in to your account' : mode === 'register' ? 'Create your free account' : 'Reset your password'}
           </p>
         </div>
 
         {/* Card */}
         <div className="bg-editor-panel border border-canvas-border rounded-2xl p-8 shadow-panel">
           {/* Mode switcher */}
-          <div className="flex bg-editor-input rounded-xl p-1 mb-6">
-            {(['login', 'register'] as Mode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setErrors({}) }}
-                className={[
-                  'flex-1 py-2 rounded-lg text-sm font-medium transition-colors capitalize',
-                  mode === m
-                    ? 'bg-primary-600 text-white shadow'
-                    : 'text-slate-500 hover:text-slate-900',
-                ].join(' ')}
-                aria-pressed={mode === m}
-              >
-                {m === 'login' ? 'Sign In' : 'Register'}
-              </button>
-            ))}
-          </div>
+          {mode !== 'forgot-password' && (
+            <div className="flex bg-editor-input rounded-xl p-1 mb-6">
+              {(['login', 'register'] as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setErrors({}) }}
+                  className={[
+                    'flex-1 py-2 rounded-lg text-sm font-medium transition-colors capitalize',
+                    mode === m
+                      ? 'bg-primary-600 text-white shadow'
+                      : 'text-slate-500 hover:text-slate-900',
+                  ].join(' ')}
+                  aria-pressed={mode === m}
+                >
+                  {m === 'login' ? 'Sign In' : 'Register'}
+                </button>
+              ))}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <AnimatePresence>
@@ -134,16 +142,30 @@ const AuthPage = memo(() => {
               placeholder="you@example.com"
               id="auth-email"
             />
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              leftIcon={<MdLock className="w-4 h-4" />}
-              placeholder="••••••••"
-              id="auth-password"
-            />
+            {mode !== 'forgot-password' && (
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errors.password}
+                leftIcon={<MdLock className="w-4 h-4" />}
+                placeholder="••••••••"
+                id="auth-password"
+              />
+            )}
+
+            {mode === 'login' && (
+              <div className="flex justify-end !mt-1">
+                <button
+                  type="button"
+                  onClick={() => { setMode('forgot-password'); setErrors({}) }}
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
 
             <Button
               type="submit"
@@ -152,10 +174,22 @@ const AuthPage = memo(() => {
               className="w-full mt-2"
               loading={loading}
               icon={<MdArrowForward className="w-4 h-4" />}
-              aria-label={mode === 'login' ? 'Sign in' : 'Create account'}
+              aria-label={mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Send reset link'}
             >
-              {mode === 'login' ? 'Sign In' : 'Create Account'}
+              {mode === 'login' ? 'Sign In' : mode === 'register' ? 'Create Account' : 'Send Reset Link'}
             </Button>
+            
+            {mode === 'forgot-password' && (
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setErrors({}) }}
+                  className="text-sm text-slate-500 hover:text-slate-600"
+                >
+                  Back to Login
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Skip to editor */}

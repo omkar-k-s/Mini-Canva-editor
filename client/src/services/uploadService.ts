@@ -28,7 +28,30 @@ export const uploadService = {
   toDataUrl: (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
-      reader.onload = (e) => resolve(e.target?.result as string)
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let { width, height } = img
+          const max = 1200
+          if (width > max || height > max) {
+            if (width > height) {
+              height *= max / width
+              width = max
+            } else {
+              width *= max / height
+              height = max
+            }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/jpeg', 0.8))
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
       reader.onerror = reject
       reader.readAsDataURL(file)
     }),

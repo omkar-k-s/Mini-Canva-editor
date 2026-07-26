@@ -1,6 +1,7 @@
 import React, { memo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { MdHistory, MdRestoreFromTrash } from 'react-icons/md'
+import { safeLoadFromJSON } from '@/utils/fabricHelpers'
 import { useCanvasStore, selectHistory } from '@/store/canvasStore'
 import { useShallow } from 'zustand/react/shallow'
 import { Button } from '@/components/ui/Button'
@@ -18,7 +19,7 @@ const HistoryPanel = memo(() => {
   const restoreToIndex = useCallback((index: number) => {
     if (!canvas) return
     const entry = history[index]
-    canvas.loadFromJSON(JSON.parse(entry.snapshot), () => {
+    safeLoadFromJSON(canvas, entry.snapshot, () => {
       canvas.requestRenderAll()
     })
     useCanvasStore.setState({ historyIndex: index })
